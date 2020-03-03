@@ -88,8 +88,3 @@ Here you can look at the dashboards. Grafana has a datasource ready to query on 
 kubectl port-forward $(kubectl get pods --selector=app.kubernetes.io/name=grafana -n monitoring --output=jsonpath="{.items..metadata.name}") -n monitoring 3000
 ```
 
-
-```yaml
-kubectl port-forward -n monitoring prometheus-monitoring-prometheus-oper-prometheus-0 9090
-```
-
