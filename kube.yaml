@@ -1,0 +1,71 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: spring-micrometer-prometheus
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: spring-micrometer-prometheus
+        function: spring-micrometer-prometheus
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/prom"
+        prometheus.io/port:  "8080"
+    spec:
+      containers:
+        # TODO: Change following to match your application
+        - image: avpatel257/spring-micrometer-prometheus:ad70324
+          imagePullPolicy: Always
+          name: spring-micrometer-prometheus
+          ports:
+            - name: web
+              containerPort: 8080
+          resources:
+            # Max memory/cpu that can be given to this Pod (pod will be terminated if usage goes above the limit value)
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+            # Amount of memory & cpu needed to schedule this pod
+            requests:
+              memory: "256Mi"
+              cpu: "1"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-micrometer-prometheus
+  labels:
+    app: spring-micrometer-prometheus
+  namespace: default
+spec:
+  selector:
+    app: spring-micrometer-prometheus
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort
+
+
+#---
+#apiVersion: monitoring.coreos.com/v1
+#kind: ServiceMonitor
+#metadata:
+#  name: spring-micrometer-prometheus-servicemonitor
+#  # Change this to the namespace the Prometheus instance is running in
+#  namespace: monitoring
+#  labels:
+#    app: gitlab-runner-gitlab-runner
+#    release: prometheus
+#spec:
+#  selector:
+#    matchLabels:
+#      app: spring-micrometer-prometheus # target gitlab service
+#  endpoints:
+#    - port: web
+#      interval: 15s
