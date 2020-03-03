@@ -61,7 +61,12 @@ metadata:
   # Change this to the namespace the Prometheus instance is running in
   labels:
     app: spring-micrometer-prometheus
-    release: prometheus
+    # This label is very important in order for prometheus operator to pick up this monitor.
+    # Match it to the output of "kubectl get prometheus -o yaml". Look for the release label under "serviceMonitorSelector" section of the output of that command
+    #    serviceMonitorSelector:
+    #      matchLabels:
+    #        release: monitoring
+    release: monitoring
 spec:
   selector:
     matchLabels:
