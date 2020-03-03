@@ -47,25 +47,28 @@ spec:
     app: spring-micrometer-prometheus
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8080
+      port: 8080
+      targetPort: web
+      name: web
   type: NodePort
 
 
-#---
-#apiVersion: monitoring.coreos.com/v1
-#kind: ServiceMonitor
-#metadata:
-#  name: spring-micrometer-prometheus-servicemonitor
-#  # Change this to the namespace the Prometheus instance is running in
-#  namespace: monitoring
-#  labels:
-#    app: gitlab-runner-gitlab-runner
-#    release: prometheus
-#spec:
-#  selector:
-#    matchLabels:
-#      app: spring-micrometer-prometheus # target gitlab service
-#  endpoints:
-#    - port: web
-#      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spring-micrometer-prometheus-servicemonitor
+  # Change this to the namespace the Prometheus instance is running in
+  labels:
+    app: spring-micrometer-prometheus
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: spring-micrometer-prometheus
+  endpoints:
+    - port: web
+      scheme: http
+      interval: 15s
+      path: '/prom'
+      honorLabels: true
