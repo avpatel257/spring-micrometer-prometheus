@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         # TODO: Change following to match your application
-        - image: avpatel257/spring-micrometer-prometheus:ad70324
+        - image: avpatel257/spring-micrometer-prometheus:latest
           imagePullPolicy: Always
           name: spring-micrometer-prometheus
           ports:
