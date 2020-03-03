@@ -10,10 +10,6 @@ spec:
       labels:
         app: spring-micrometer-prometheus
         function: spring-micrometer-prometheus
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/path: "/prom"
-        prometheus.io/port:  "8080"
     spec:
       containers:
         # TODO: Change following to match your application
@@ -75,5 +71,5 @@ spec:
     - port: web
       scheme: http
       interval: 15s
-      path: '/prom'
+      path: '/actuator/prometheus'
       honorLabels: true
