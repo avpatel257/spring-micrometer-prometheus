@@ -22,6 +22,13 @@ Prometheus metrics are available at: [http://localhost:8080/actuator/prometheus]
 
 To run the latest image in K8S cluster:
 
+### Start minikube
+
+```
+minikube start --kubernetes-version v1.14.9 --memory=8000 --cpus=4 --vm-driver=hyperkit --disk-size=30g --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+
+```
+
 ```
 kubectl apply -f k8s/kube.yaml
 ```
