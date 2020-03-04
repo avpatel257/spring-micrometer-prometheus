@@ -18,7 +18,7 @@ hey http://localhost:8080/api/test
 
 ```
 
-Prometheus metrics are available at: [http://localhost:8080/prom](http://localhost:8080/prom)
+Prometheus metrics are available at: [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus)
 
 To run the latest image in K8S cluster:
 
