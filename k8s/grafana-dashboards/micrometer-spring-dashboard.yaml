@@ -685,8 +685,8 @@ data:
           {
             "allValue": null,
             "current": {
-              "text": "user-service",
-              "value": "user-service"
+              "text": "spring-micrometer-prometheus",
+              "value": "spring-micrometer-prometheus"
             },
             "datasource": "Prometheus",
             "definition": "label_values(application)",
