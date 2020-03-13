@@ -1,5 +1,3 @@
-# values_minikube.yaml
-# Tested with stable/prometheus-operator v4.3.6
 # https://medium.com/@eduardobaitello/trying-prometheus-operator-with-helm-minikube-b617a2dccfa3
 coreDns:
   service:
@@ -30,36 +28,115 @@ alertmanager:
     global:
       resolve_timeout: 5m
     route:
-      group_by: ['job']
+      group_by: ['alertname', 'cluster', 'service']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
-      receiver: 'slack'
+      # A default receiver
+      receiver: emailer
       routes:
         - match:
+            alertname: TargetDown
+          receiver: emailerTD
+        - match:
+            alertname: DeadMansSwitch
+          receiver: emailerWD
+        - match:
+            alertname: TargetDown
+          receiver: emailerTD
+        - match:
             alertname: Watchdog
-          receiver: 'null'
-    # This inhibt rule is a hack from: https://stackoverflow.com/questions/54806336/how-to-silence-prometheus-alertmanager-using-config-files/54814033#54814033
-    inhibit_rules:
-      - target_match_re:
-          alertname: '.+Overcommit'
-        source_match:
-          alertname: 'Watchdog'
-        equal: ['prometheus']
+          receiver: emailerWD
+        - match:
+            alertname: RequestRate
+          receiver: emailerRR
+        - match:
+            alertname: OutOfMemory
+          receiver: emailerTD
+        - match:
+            alertname: HighCpuLoad
+          receiver: emailerWD
     receivers:
-      - name: 'null'
-      - name: 'slack'
-        slack_configs:
-          - api_url: 'https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK_HERE' # <--- REPLACE THIS WITH YOUR SLACK WEBHOOK
-            send_resolved: true
-            channel: '#notif-channel' # <--- REPLACE THIS WITH YOUR SLACK CHANNEL
-            title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Monitoring Event Notification'
-            text: |-
-              {{ range .Alerts }}
-                *Alert:* {{ .Labels.alertname }} - `{{ .Labels.severity }}`
-                *Description:* {{ .Annotations.message }}
-                *Graph:* <{{ .GeneratorURL }}|:chart_with_upwards_trend:> *Runbook:* <{{ .Annotations.runbook_url }}|:spiral_note_pad:>
-                *Details:*
-                {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
-                {{ end }}
-              {{ end }}
+      - name: emailer
+        email_configs:
+          - to: to@gmail.com
+            from:  from@gmail.com
+            smarthost: smtp.gmail.com:587
+            auth_username: from@gmail.com
+            auth_identity: from@gmail.com
+            auth_password: change-me
+      - name: emailerTD
+        email_configs:
+          - to: from@gmail.com
+            from:  from@gmail.com
+            smarthost: smtp.gmail.com:587
+            auth_username: from@gmail.com
+            auth_identity: from@gmail.com
+            auth_password: change-me
+      - name: emailerWD
+        email_configs:
+          - to: to@gmail.com
+            from:  from@gmail.com
+            smarthost: smtp.gmail.com:587
+            auth_username: from@gmail.com
+            auth_identity: from@gmail.com
+            auth_password: change-me
+      - name: emailerRR
+        email_configs:
+          - to: to@gmail.com
+            from:  from@gmail.com
+            smarthost: smtp.gmail.com:587
+            auth_username: from@gmail.com
+            auth_identity: from@gmail.com
+            auth_password: change-me
+
+
+##Alert rules
+additionalPrometheusRules:
+  - name: prometheus-operator
+    groups:
+      - name: prometheus-operator
+        rules:
+          - alert: TargetDown
+            annotations:
+              description: '{{ $value }}% of {{ $labels.job }} targets are down.'
+              summary: Targets are down
+            expr: 100 * (count(up == 0) BY (job) / count(up) BY (job)) > 10
+            for: 10m
+            labels:
+              severity: warning
+          - alert: DeadMansSwitch
+            annotations:
+              description: This is a DeadMansSwitch meant to ensure that the entire Alerting
+                pipeline is functional.
+              summary: Alerting DeadMansSwitch
+            expr: vector(1)
+            labels:
+              severity: none
+          - alert: RequestRate
+            expr:  rate( http_server_requests_seconds_count{uri="/api/test"}[5m]) > 0
+            for: 1m
+            labels:
+              severity: high
+            annotations:
+              summary: Application receiving too many requests
+              message: Application receiving too many requests
+          - alert: OutOfMemory
+            expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Out of memory (instance {{ $labels.instance }})"
+              message: Out of memory
+              description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+          - alert: HighCpuLoad
+            expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU load (instance {{ $labels.instance }})"
+              message: High CPU load
+              description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+    
