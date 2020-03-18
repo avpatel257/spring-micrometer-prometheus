@@ -95,3 +95,26 @@ Here you can look at the dashboards. Grafana has a datasource ready to query on 
 kubectl port-forward $(kubectl get pods --selector=app.kubernetes.io/name=grafana -n monitoring --output=jsonpath="{.items..metadata.name}") -n monitoring 3000
 ```
 
+
+## Docker Commands (might come handy for debugging)
+
+#### Run docker image with volume mount and env variables:
+
+```
+docker run -d -e TZ=America/New_York -p 8080:8080 -v <source>:<destination> <docker-image>
+```
+
+#### ssh to a running container
+
+```
+docker exec -it <container-id> /bin/bash
+```
+
+#### Override entry point
+
+```
+docker run -d --entrypoint "java -jar app.jar" <docker-image>
+
+docker run -d --entrypoint "sleep 10" <docker-image>
+
+```
