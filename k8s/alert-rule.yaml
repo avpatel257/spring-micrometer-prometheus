@@ -1,28 +1,42 @@
+# Apply this yaml to "monitoring" namespace
+
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
     app: prometheus-operator
     release: monitoring
-  name: apatel-prometheus-service-rules
-  namespace: monitoring
+  name: faas-prometheus--recording.rules
 spec:
   groups:
-  - name: general.rules
+  - name: faas-prometheus--recording.rules
     rules:
-    - alert: TargetDown-serviceprom
+      - record: faas_http_request_rate
+        expr: sum by(application, uri, status) (label_replace(rate(http_server_requests_seconds_count{uri !="/actuator/prometheus"}[5m]), "status", "${1}xx", "code", "([0-9]).."))
+
+      - record: faas_node_filesystem_free_percent
+        expr: 100 * node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}  
+
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: prometheus-operator
+    release: monitoring
+  name: faas-prometheus-alertmanager.rules
+spec:
+  groups:
+  - name: faas-prometheus-alertmanager.rules
+    rules:
+    - alert: HighApplicationErrorRate
       annotations:
-        description: '{{ $value }}% of {{ $labels.job }} targets are down.'
-        summary: Targets are down
-      expr: 100 * (count(up == 0) BY (job) / count(up) BY (job)) > 10
-      for: 10m
+        description: 'Applicaton: {{ $labels.application}} is experiencing high error rate of: {{ $value }}'
+        summary: High Application Error Rate
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-errorbudgetburn
+      expr: faas_http_request_rate{status="500"} > 1
+      for: 1m
       labels:
         severity: warning
-    - alert: DeadMansSwitch-serviceprom
-      annotations:
-        description: This is a DeadMansSwitch meant to ensure that the entire Alerting
-          pipeline is functional.
-        summary: Alerting DeadMansSwitch
-      expr: vector(1)
-      labels:
-        severity: none
